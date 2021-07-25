@@ -1,39 +1,58 @@
-#!/usr/bin/python3
+#! /usr/bin/env python3
 
-import subprocess
-import json
-import lxml
-import time
+import requests
 from bs4 import BeautifulSoup
+import time
+import csv
+from datetime import date
 
-results = []
+#file nevet nem muszaj valtozoba tenni
+today_column = str(date.today())
+csv_file = open(today_column  + "_adm_ass_office.csv", "w")
 
-#ezt ki kell javitani - kulso for ciklus
-for i in range(1,5):
-	URL = f"https://www.profession.hu/allasok/{i},0,0,Data+scientist%25401%25401?keywordsearch"
-	website_call = subprocess.run(["curl", URL], stdout=subprocess.PIPE)
+csv_writer = csv.writer(csv_file, delimiter=';')
+csv_writer.writerow(['Job Name', 'Company', 'Place', 'Highlights', 'Category', 'Date'])
 
-	s = BeautifulSoup(website_call.stdout, "lxml")
-	links = [element.a['href'] for element in  s.find_all('h2', class_= '''job-card__title text-truncate''')]
+job_category = "administration-assistance-office-work"
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36'}
 
-	for link in links:
-		try:
-			website_call = subprocess.run(["curl", link], stdout=subprocess.PIPE)
-			soup = BeautifulSoup(website_call.stdout, "lxml")
-			header = soup.find("header", class_ = "adv-cover-header")
-			description = soup.select('[id*="sablon"]')
-			description_text = "\n".join([element.strip() for element in description[0].findAll(text=True) if element != '\n'])
-			results.append( 
-			{
-				"title" : header.h1.text,
-				"company" : header.h2.text,
-				"place_of_work" : header.h3.text,
-				"description" : description_text
-			})
-		except:
-			AttributeError
-			continue
-		time.sleep(1)
+# a ciklusvaltozot lehet hasznalni a ciklusban
+# url_count, count, highlight_count - eleg helyettuk a ciklusvaltozo
 
-with open(time.strftime("%Y-%m-%d_%H:%M:%S") + '.json', 'w', encoding='utf-8') as f:
-	json.dump(results, f)
+# try - except: break -> hatalmas antipattern
+# legalabb azt meg kell jelolni hogy milyen errort varunk (ValueError, AttributeError, stb.)
+# plusz valami 
+for url_count in range(5):
+    url = "https://www.profession.hu/allasok/adminisztracio-asszisztens-irodai-munka/{},1".format(url_count)
+    html_page = requests.get(url, headers=headers)
+    soup = BeautifulSoup(html_page.content, 'lxml')
+    job_cards = soup.find_all("div", class_ = "card-body")
+    
+    #for ciklus for-eachre valtoztatva
+    for job_card in job_cards:
+        if job_card:
+            
+            # ez a job tomb felesleges volt, nem kell minden ciklusban letrehozni, mivel az egyetlen funkcioja az hogy
+            # a fajlba irasnal beleirjuk a tombot
+            # job = []
+
+            #nehany dolog valtozott miota meg lett irva a scraper(HTML elnevezesek, struktura)
+            job_name = job_card.find_all("a")[0].get_text().strip().replace("\n","")
+            company = job_card.find("a", class_ = "link-icon").get_text().strip().replace("\n","")
+            place = job_card.find("div", class_ = "job-card__company-address newarea mt-2 mt-md-0 icon map").get_text().strip().replace("\n","")
+            job_highlights_block = job_card.find("div", class_ = "job-card__tags advertisement_tag_block d-flex justify-content-between align-items-end")
+            job_highlights = "Highlights:"
+            print(job_highlights_block)
+            for y in range(10):
+                try:
+                    job_highlight = job_highlights_block.find_all("span", class_ = "advertisement_tag job-card__tag")[y].get_text().strip().replace("\n","")
+                    job_highlights+=" " + job_highlight + " &"
+                except:
+                    print("Belso except")
+                    break
+           
+            #print([job_name, company, place, job_highlights, job_category, today_column])
+            csv_writer.writerow([job_name, company, place, job_highlights, job_category, today_column])
+    time.sleep(5)
+
+csv_file.close()
