@@ -40,18 +40,15 @@ for url_count in range(5):
             job_name = job_card.find_all("a")[0].get_text().strip().replace("\n","")
             company = job_card.find("a", class_ = "link-icon").get_text().strip().replace("\n","")
             place = job_card.find("div", class_ = "job-card__company-address newarea mt-2 mt-md-0 icon map").get_text().strip().replace("\n","")
-            job_highlights_block = job_card.find("div", class_ = "job-card__tags advertisement_tag_block d-flex justify-content-between align-items-end")
-            job_highlights = "Highlights:"
-            print(job_highlights_block)
-            for y in range(10):
-                try:
-                    job_highlight = job_highlights_block.find_all("span", class_ = "advertisement_tag job-card__tag")[y].get_text().strip().replace("\n","")
-                    job_highlights+=" " + job_highlight + " &"
-                except:
-                    print("Belso except")
-                    break
-           
-            #print([job_name, company, place, job_highlights, job_category, today_column])
+            
+            #higlights block at lett irva 
+            #2 kulonbozo div van, mindkettoben megeresem a cimszavakat es egyesitem egy tombbe
+
+            #list comprehension-t hasznaltam (lenyegeben ugyanaz mint a for/each ciklus csak rovidebb)
+            highlights = [element.get_text().strip().replace("\n","") for element in job_card.find_all("span", class_="advertisement_tag job-card__tag job-card__tag--stress-call")]
+            highlights.extend([element.get_text().strip().replace("\n","") for element in job_card.find_all("span", class_="advertisement_tag job-card__tag")])
+            job_highlights = "Highlights: " + " &".join(highlights)
+            print([job_name, company, place, job_highlights, job_category, today_column])
             csv_writer.writerow([job_name, company, place, job_highlights, job_category, today_column])
     time.sleep(5)
 
