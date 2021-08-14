@@ -36,7 +36,7 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 #ezt osztom az oldalankenti darabszammal es megvagyunk
 
 #===> atirni az elso oldal URL-jet
-url = "https://www.profession.hu/allasok/1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,{}".format(args['url_part'])
+url = "https://www.profession.hu/allasok/{}/1,{}".format(args['url_part'], args['number'])
 html_page = requests.get(url, headers=headers)
 soup = BeautifulSoup(html_page.content, 'lxml')
 total_jobs_div = soup.find("div", class_ = "job-list__count head d-flex align-items-center justify-content-between")
@@ -56,7 +56,7 @@ if total_jobs_in_category % 20 > 0: num_of_pages += 1
 time.sleep(5)
 for i in range(1,num_of_pages):
 #===> megfigyelni hogy hogyan valtozik az URL es az szerint beallitani a valtozo adatokat (kategoria, oldalszam)
-    url = "https://www.profession.hu/allasok/{},0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,{}".format(i,args['url_part'])
+    url = "https://www.profession.hu/allasok/{}/{},{}".format(args['url_part'],i,args['number'])
     html_page = requests.get(url, headers=headers)
     soup = BeautifulSoup(html_page.content, 'lxml')
     job_cards = soup.find_all("div", class_ = "card-body")
